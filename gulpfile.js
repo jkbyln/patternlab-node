@@ -190,10 +190,12 @@ gulp.task('sass:styleguide', function () {
  * SVG
  * [https://github.com/w0rm/gulp-svgstore]
  * [https://www.npmjs.com/package/gulp-svgmin]
+ *
+ * Combines and Inlines SVGs below the opening body tag
  */
 
 gulp.task('svg', function () {
-  var svgs = gulp.src('./source/svg/src/**/*.svg')
+  var svgs = gulp.src('./source/svg/**/*.svg')
     .pipe( svgmin( function (file) {
       var prefix = path.basename(file.relative, path.extname(file.relative));
       return {
