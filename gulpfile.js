@@ -1,16 +1,28 @@
-// Special thanks to oscar-g (https://github.com/oscar-g) for starting this at https://github.com/oscar-g/patternlab-node/tree/dev-gulp
 
-var pkg = require('./package.json'),
-    gulp = require('gulp'),
-    path = require('path'),
-    eol = require('os').EOL,
-    del = require('del'),
-    strip_banner = require('gulp-strip-banner'),
-    header = require('gulp-header'),
-    nodeunit = require('gulp-nodeunit'),
-    browserSync = require('browser-sync').create();
+var pkg   = require('./package.json');
+var gulp  = require('gulp');
+var path  = require('path');
+var eol   = require('os').EOL;
+var del   = require('del');
+var header        = require('gulp-header');
+var nodeunit      = require('gulp-nodeunit');
+var inject        = require('gulp-inject');
+var sass          = require('gulp-sass');
+var postcss       = require('gulp-postcss');
+var autoprefixer  = require('autoprefixer');
+var svgstore      = require('gulp-svgstore');
+var svgmin        = require('gulp-svgmin');
+var browserSync   = require('browser-sync').create();
 
+
+
+/**
+ * Bootsrap Patternlab
+ */
+
+// Load the gulp builder
 require('gulp-load')(gulp);
+
 var banner = [ '/** ',
   ' * <%= pkg.name %> - v<%= pkg.version %> - <%= today %>',
   ' * ',
@@ -20,21 +32,16 @@ var banner = [ '/** ',
   ' * Many thanks to Brad Frost and Dave Olsen for inspiration, encouragement, and advice.',
   ' * ', ' **/'].join(eol);
 
-function paths () {
-  return require('./config.json').paths;
-}
+gulp.loadTasks( __dirname + '/builder/patternlab_gulp.js' );
 
-//load patternlab-node tasks
-gulp.loadTasks(__dirname+'/builder/patternlab_gulp.js');
-
-//clean patterns dir
-gulp.task('clean', function(cb){
-  del.sync([path.resolve(paths().public.patterns, '*')], {force: true});
+// Clean the public project
+gulp.task('clean', function (cb) {
+  del.sync(['./public/patterns/*'], {force: true});
   cb();
 });
 
-//build the banner
-gulp.task('banner', function(){
+// Build
+gulp.task('banner', function () {
   return gulp.src([
     './builder/patternlab.js',
     './builder/object_factory.js',
@@ -49,127 +56,198 @@ gulp.task('banner', function(){
     './builder/list_item_hunter.js',
     './builder/style_modifier_hunter.js'
   ])
-    .pipe(strip_banner())
-    .pipe(header( banner, {
-      pkg : pkg,
-      today : new Date().getFullYear() }
-    ))
+    .pipe( header( banner, {
+      pkg   : pkg,
+      today : new Date().getFullYear()
+    }))
     .pipe(gulp.dest('./builder'));
 });
 
 
-// COPY TASKS
 
-// JS copy
-gulp.task('cp:js', function(){
-  return gulp.src('**/*.js', {cwd: path.resolve(paths().source.js)} )
-    .pipe(gulp.dest(path.resolve(paths().public.js)));
+/**
+ * Setup Public Dirs
+ */
+
+gulp.task('cp:js', function () {
+  return gulp.src( '**/*.js', { cwd: './source/js' })
+    .pipe(gulp.dest('./public/js'));
 });
 
-// Images copy
-gulp.task('cp:img', function(){
+gulp.task('cp:img', function () {
   return gulp.src(
-    [ '**/*.gif', '**/*.png', '**/*.jpg', '**/*.jpeg'  ],
-    {cwd: path.resolve(paths().source.images)} )
-    .pipe(gulp.dest(path.resolve(paths().public.images)));
+    [ '**/*.gif', '**/*.png', '**/*.jpg', '**/*.jpeg' ],
+    { cwd: './source/images' }
+  )
+    .pipe(gulp.dest('./public/images'));
 });
 
-// Fonts copy
-gulp.task('cp:font', function(){
-  return gulp.src('*', {cwd: path.resolve(paths().source.fonts)})
-    .pipe(gulp.dest(path.resolve(paths().public.images)));
+gulp.task('cp:font', function () {
+  return gulp.src( '*', { cwd:'./source/fonts' })
+    .pipe(gulp.dest('./public/fonts'));
 });
 
-// Data copy
-gulp.task('cp:data', function(){
-  return gulp.src('annotations.js', {cwd: path.resolve(paths().source.data)})
-    .pipe(gulp.dest(path.resolve(paths().public.data)));
+gulp.task('cp:data', function () {
+  return gulp.src( 'annotations.js', { cwd:'./source/_data' })
+    .pipe(gulp.dest('./public/data'));
 });
 
-// CSS Copy
-gulp.task('cp:css', function(){
-  return gulp.src(path.resolve(paths().source.css, 'style.css'))
-    .pipe(gulp.dest(path.resolve(paths().public.css)))
+gulp.task('cp:css', function () {
+  return gulp.src('./source/css/style.css')
+    .pipe(gulp.dest('./public/css'))
     .pipe(browserSync.stream());
 });
 
-// Styleguide Copy
-gulp.task('cp:styleguide', function(){
-  return gulp.src(
-      ['**/*'],
-      {cwd: path.resolve(paths().source.styleguide)})
-      .pipe(gulp.dest(path.resolve(paths().public.styleguide)))
-      .pipe(browserSync.stream());
+gulp.task('cp:svg', function () {
+  return gulp.src( '**/*.svg', { cwd: './source/svg' })
+    .pipe(gulp.dest('./public/svg'));
 });
 
-// server and watch tasks
+
+
+/**
+ * Serve and Watch
+ */
+
 gulp.task('connect', ['lab'], function () {
   browserSync.init({
-    server: {
-      baseDir: path.resolve(paths().public.root)
-    },
-    snippetOptions: {
-      // Ignore all HTML files within the templates folder
-      blacklist: ['/index.html', '/']
-    },
-    notify: {
-      styles: [
-        'display: none',
-        'padding: 15px',
-        'font-family: sans-serif',
-        'position: fixed',
-        'font-size: 1em',
-        'z-index: 9999',
-        'bottom: 0px',
-        'right: 0px',
-        'border-top-left-radius: 5px',
-        'background-color: #1B2032',
-        'opacity: 0.4',
-        'margin: 0',
-        'color: white',
-        'text-align: center'
-      ]
-    }
+    server: { baseDir: './public/' }
   });
-  gulp.watch(path.resolve(paths().source.css, '**/*.css'), ['cp:css']);
 
-  gulp.watch(path.resolve(paths().source.styleguide, '**/*.*'), ['cp:styleguide']);
+  gulp.watch('./source/css/style.css', ['cp:css']);
+  gulp.watch('./source/css/**/*.scss', ['sass:style']);
+  gulp.watch('./public/styleguide/*.scss', ['sass:styleguide']);
 
-  gulp.watch(
-    [
-      path.resolve(paths().source.patterns, '**/*.mustache'),
-      path.resolve(paths().source.patterns, '**/*.json'),
-      path.resolve(paths().source.data, '*.json'),
-      path.resolve(paths().source.fonts + '/*'),
-      path.resolve(paths().source.images + '/*'),
-      path.resolve(paths().source.data + '*.json')
-    ],
-    ['lab-pipe'],
-    function () { browserSync.reload(); }
-  );
+  gulp.watch('./source/svg/**/*.svg', ['svg', 'cp:svg']);
 
+  gulp.watch([
+    './source/_patterns/**/*.mustache',
+    './source/_patterns/**/*.json',
+    './source/_data/*.json'
+  ], ['lab-pipe'], function () {
+    browserSync.reload();
+  });
 });
 
-//unit test
-gulp.task('nodeunit', function(){
+
+
+/**
+ * Sass
+ * ----
+ * [https://github.com/dlmanning/gulp-sass]
+ * [https://www.npmjs.com/package/gulp-postcss]
+ * [https://github.com/sindresorhus/gulp-autoprefixer]
+ * 
+ * Plugins (Breakpoints, Susy, Singularity) are installed
+ * via Bower and loaded through libsass' `includePaths` option
+ */
+
+// Supported browsers
+var browserslist = [
+  '> 1%',
+  'Last 3 versions',
+  'IE 8'
+];
+
+// PostCSS processors
+var processors = [
+  autoprefixer({ browsers: browserslist })
+];
+
+gulp.task('sass:style', function () {
+  return gulp.src('./source/css/*.scss')
+    .pipe( sass({
+      includePaths: [
+        './bower_components/compass-breakpoint/stylesheets/',
+        './bower_components/susy/sass/'
+      ],
+      outputStyle: 'expanded',
+      precision: 8
+    }).on( 'error', sass.logError ))
+    .pipe( postcss( processors ))
+    .pipe( gulp.dest( './public/css' ))
+    .pipe( browserSync.stream());
+});
+
+gulp.task('sass:styleguide', function () {
+  return gulp.src('./public/styleguide/css/*.scss')
+    .pipe( sass({
+      includePaths: [
+        './bower_components/compass-breakpoint/stylesheets/',
+        './bower_components/susy/sass/'
+      ],
+      outputStyle: 'expanded',
+      precision: 8
+    }).on( 'error', sass.logError ))
+    .pipe( postcss( processors ))
+    .pipe( gulp.dest( './public/styleguide/css' ))
+    .pipe( browserSync.stream());
+});
+
+
+
+/**
+ * SVG
+ * [https://github.com/w0rm/gulp-svgstore]
+ * [https://www.npmjs.com/package/gulp-svgmin]
+ */
+
+gulp.task('svg', function () {
+  var svgs = gulp.src('./source/svg/src/**/*.svg')
+    .pipe( svgmin( function (file) {
+      var prefix = path.basename(file.relative, path.extname(file.relative));
+      return {
+        plugins: [{
+          cleanupIDs: {
+            prefix: prefix + '-',
+            minify: true
+          }
+        }]
+      }
+    }))
+    .pipe( svgstore({ inlineSvg: true }));
+
+  function fileContents(filePath, file) {
+    return file.contents.toString();
+  }
+
+  return gulp.src([
+    './source/_patternlab-files/**/*.html',
+    './source/_patternlab-files/**/*.mustache'
+  ])
+    .pipe(inject(svgs, { transform: fileContents }))
+    .pipe(gulp.dest('./source/_patternlab-files'))
+    .pipe( browserSync.stream());
+});
+
+
+
+/**
+ * Unit Testing
+ */
+
+gulp.task('nodeunit', function () {
   return gulp.src('./test/**/*_tests.js')
     .pipe(nodeunit());
 });
 
 
-gulp.task('lab-pipe', ['lab'], function(cb){
+
+/**
+ * Tasks
+ */
+
+gulp.task('lab-pipe', ['lab'], function (cb) {
   cb();
   browserSync.reload();
 });
 
-gulp.task('default', ['lab']);
-
-gulp.task('assets', ['cp:js', 'cp:img', 'cp:font', 'cp:data', 'cp:css', 'cp:styleguide' ]);
-gulp.task('prelab', ['clean', 'assets']);
-gulp.task('lab', ['prelab', 'patternlab'], function(cb){cb();});
-gulp.task('patterns', ['patternlab:only_patterns']);
-gulp.task('serve', ['lab', 'connect']);
-gulp.task('travis', ['lab', 'nodeunit']);
-
-gulp.task('version', ['patternlab:version']);
-gulp.task('help', ['patternlab:help']);
+gulp.task('default',  [ 'lab' ]);
+gulp.task('assets',   [ 'cp:js', 'cp:img', 'cp:font', 'cp:data', 'sass:style', 'sass:styleguide' ]);
+gulp.task('prelab',   [ 'clean', 'banner', 'assets' ]);
+gulp.task('lab',      [ 'prelab', 'patternlab' ], function(cb){cb();});
+gulp.task('patterns', [ 'patternlab:only_patterns' ]);
+gulp.task('serve',    [ 'lab', 'connect' ]);
+gulp.task('travis',   [ 'lab', 'nodeunit' ]);
+gulp.task('version',  ['patternlab:version' ]);
+gulp.task('help',     ['patternlab:help' ]);
