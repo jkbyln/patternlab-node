@@ -1,0 +1,79 @@
+
+.container {
+  @extend %cf;
+  margin: 0 auto;
+  padding: 0 $space;
+  max-width: $max-width;
+}
+
+
+/**
+ * Grid Layout
+ */
+
+.l-grid {
+  margin-left: (-$space);
+
+  .l-grid-item {
+    padding-left: $space;
+    margin-bottom: $space;
+  }
+
+  @include breakpoint($bp-large) {
+    margin-left: (-$space-double);
+
+    .l-grid-item {
+      padding-left: $space-double;
+      margin-bottom: $space-double;
+    }
+  }
+
+  .flexbox & {
+    display: flex;
+    flex-wrap: wrap;
+    
+    // Over-ride default `inline-block` spacing fix
+    .l-grid-item.l-grid-item {
+      margin-right: 0;
+    }
+  }
+}
+
+// Defaults to one-col
+.l-grid-item {
+  display: inline-block;
+  vertical-align: top;
+  width: 100%;
+  
+
+  // Two Col
+  .l-grid--2up & {
+    @include breakpoint($bp-med) {
+      margin-right: -5px;
+      width: 50%;
+    }
+  }
+  
+
+  // Three Col
+  .l-grid--3up & {
+    @include breakpoint($bp-med) {
+      margin-right: -5px;
+      width: 33.33%;
+    }
+  }
+
+  
+  // Four Col
+  .l-grid--4up & {
+    @include breakpoint($bp-med) {
+      margin-right: -5px;
+      width: 50%;
+    }
+
+    @include breakpoint($bp-large) {
+      margin-right: -5px;
+      width: 25%;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+
+.block--media {
+  margin-bottom: $space;
+
+  .flexbox & {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.media-figure {
+  margin-right: $space-and-half;
+
+  img {
+    display: block;
+  }
+}
+
+.media-body {
+  
+  .flexbox & {
+    flex: 1;
+  }
+}

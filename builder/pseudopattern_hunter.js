@@ -1,4 +1,12 @@
-/* 
+/** 
+ * patternlab-node - v0.15.0 - 2016
+ * 
+ * Brian Muenzenmeyer, and the web community.
+ * Licensed under the MIT license.
+ * 
+ * Many thanks to Brad Frost and Dave Olsen for inspiration, encouragement, and advice.
+ * 
+ **//* 
  * patternlab-node - v1.1.2 - 2016 
  * 
  * Brian Muenzenmeyer, and the web community.
